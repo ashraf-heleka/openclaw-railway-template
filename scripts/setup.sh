@@ -27,6 +27,12 @@ if [ -f /data/.env ]; then
   echo "✓ Loaded /data/.env"
 fi
 
+# Auto-generate OPENCLAW_GATEWAY_TOKEN if not set (required by gateway config)
+if [ -z "$OPENCLAW_GATEWAY_TOKEN" ]; then
+  export OPENCLAW_GATEWAY_TOKEN=$(openssl rand -hex 32)
+  echo "✓ Auto-generated OPENCLAW_GATEWAY_TOKEN"
+fi
+
 # Seed template if no .env exists yet
 if [ ! -f /data/.env ]; then
   cp /app/setup/env.template /data/.env
