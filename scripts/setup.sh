@@ -178,6 +178,31 @@ if [ -f "$OPENCLAW_CONFIG_PATH" ]; then
 fi
 
 # ============================================================
+# 4c. Force-update auth.json with current ANTHROPIC_API_KEY
+# ============================================================
+
+if [ -n "$ANTHROPIC_API_KEY" ]; then
+  node -e "
+    const fs = require('fs');
+    const authPath = '/data/.openclaw/agents/main/agent/auth.json';
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    try {
+      fs.mkdirSync('/data/.openclaw/agents/main/agent', { recursive: true });
+      let auth = {};
+      if (fs.existsSync(authPath)) {
+        auth = JSON.parse(fs.readFileSync(authPath, 'utf8'));
+      }
+      if (!auth.anthropic) auth.anthropic = {};
+      if (auth.anthropic.key !== apiKey) {
+        auth.anthropic = { type: 'api_key', key: apiKey };
+        fs.writeFileSync(authPath, JSON.stringify(auth, null, 2));
+        console.log('✓ Updated Anthropic API key in auth.json');
+      }
+    } catch(e) { console.log('auth.json update skipped:', e.message); }
+  "
+fi
+
+# ============================================================
 # 5. If already onboarded, reconcile channels on boot
 # ============================================================
 
