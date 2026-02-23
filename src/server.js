@@ -154,6 +154,24 @@ server.listen(PORT, "0.0.0.0", () => {
     reloadEnv();
     syncChannelConfig(readEnvFile());
     ensureGatewayProxyConfig(null);
+    // Force-sync ANTHROPIC_API_KEY from env into auth.json on every start
+    if (process.env.ANTHROPIC_API_KEY) {
+      try {
+        const authPath = path.join(constants.OPENCLAW_DIR, "agents", "main", "agent", "auth.json");
+        fs.mkdirSync(path.dirname(authPath), { recursive: true });
+        let auth = {};
+        if (fs.existsSync(authPath)) {
+          auth = JSON.parse(fs.readFileSync(authPath, "utf8"));
+        }
+        if (!auth.anthropic || auth.anthropic.key !== process.env.ANTHROPIC_API_KEY) {
+          auth.anthropic = { type: "api_key", key: process.env.ANTHROPIC_API_KEY };
+          fs.writeFileSync(authPath, JSON.stringify(auth, null, 2));
+          console.log("[wrapper] Synced Anthropic API key to auth.json");
+        }
+      } catch (e) {
+        console.error("[wrapper] Failed to sync auth.json:", e.message);
+      }
+    }
     startGateway();
   } else {
     console.log("[wrapper] Awaiting onboarding via Setup UI");
