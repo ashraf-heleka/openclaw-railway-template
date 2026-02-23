@@ -154,22 +154,26 @@ server.listen(PORT, "0.0.0.0", () => {
     reloadEnv();
     syncChannelConfig(readEnvFile());
     ensureGatewayProxyConfig(null);
-    // Force-sync ANTHROPIC_API_KEY from env into auth.json on every start
+    // Force-sync ANTHROPIC_API_KEY from env into auth-profiles.json on every start
     if (process.env.ANTHROPIC_API_KEY) {
       try {
-        const authPath = path.join(constants.OPENCLAW_DIR, "agents", "main", "agent", "auth.json");
-        fs.mkdirSync(path.dirname(authPath), { recursive: true });
-        let auth = {};
-        if (fs.existsSync(authPath)) {
-          auth = JSON.parse(fs.readFileSync(authPath, "utf8"));
+        const profilesPath = path.join(constants.OPENCLAW_DIR, "agents", "main", "agent", "auth-profiles.json");
+        fs.mkdirSync(path.dirname(profilesPath), { recursive: true });
+        let profiles = { version: 1, profiles: {}, lastGood: {}, usageStats: {} };
+        if (fs.existsSync(profilesPath)) {
+          profiles = JSON.parse(fs.readFileSync(profilesPath, "utf8"));
         }
-        if (!auth.anthropic || auth.anthropic.key !== process.env.ANTHROPIC_API_KEY) {
-          auth.anthropic = { type: "api_key", key: process.env.ANTHROPIC_API_KEY };
-          fs.writeFileSync(authPath, JSON.stringify(auth, null, 2));
-          console.log("[wrapper] Synced Anthropic API key to auth.json");
+        if (!profiles.profiles) profiles.profiles = {};
+        const currentKey = profiles.profiles["anthropic:default"]?.key;
+        if (currentKey !== process.env.ANTHROPIC_API_KEY) {
+          profiles.profiles["anthropic:default"] = { type: "api_key", provider: "anthropic", key: process.env.ANTHROPIC_API_KEY };
+          if (!profiles.lastGood) profiles.lastGood = {};
+          profiles.lastGood["anthropic"] = "anthropic:default";
+          fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 2));
+          console.log("[wrapper] Synced Anthropic API key to auth-profiles.json");
         }
       } catch (e) {
-        console.error("[wrapper] Failed to sync auth.json:", e.message);
+        console.error("[wrapper] Failed to sync auth-profiles.json:", e.message);
       }
     }
     startGateway();
