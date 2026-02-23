@@ -197,6 +197,20 @@ server.listen(PORT, "0.0.0.0", () => {
     } catch (e) {
       console.error("[wrapper] Failed to patch WhatsApp config:", e.message);
     }
+    // Auto-clean invalid channels.whatsapp.enabled key before starting gateway
+    try {
+      const cfgPath2 = path.join(constants.OPENCLAW_DIR, "openclaw.json");
+      if (fs.existsSync(cfgPath2)) {
+        const cfg2 = JSON.parse(fs.readFileSync(cfgPath2, "utf8"));
+        if (cfg2.channels && cfg2.channels.whatsapp && cfg2.channels.whatsapp.enabled !== undefined) {
+          delete cfg2.channels.whatsapp.enabled;
+          fs.writeFileSync(cfgPath2, JSON.stringify(cfg2, null, 2));
+          console.log("[wrapper] Removed invalid channels.whatsapp.enabled key");
+        }
+      }
+    } catch (e) {
+      console.error("[wrapper] Config cleanup error:", e.message);
+    }
     startGateway();
   } else {
     console.log("[wrapper] Awaiting onboarding via Setup UI");
