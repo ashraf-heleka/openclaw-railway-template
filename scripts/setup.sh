@@ -284,4 +284,24 @@ else
 fi
 
 echo "✓ Setup complete — starting wrapper"
+# Validate openclaw.json — restore from backup if corrupted
+if [ -f "$OPENCLAW_DIR/openclaw.json" ]; then
+  if ! node -e "JSON.parse(require('fs').readFileSync('$OPENCLAW_DIR/openclaw.json','utf8'))" 2>/dev/null; then
+    echo "[setup] openclaw.json is invalid JSON — restoring from backup"
+    RESTORED=false
+    for BAK in "$OPENCLAW_DIR/openclaw.json.bak" "$OPENCLAW_DIR/openclaw.json.bak.1" "$OPENCLAW_DIR/openclaw.json.bak.2"; do
+      if [ -f "$BAK" ] && node -e "JSON.parse(require('fs').readFileSync('$BAK','utf8'))" 2>/dev/null; then
+        cp "$BAK" "$OPENCLAW_DIR/openclaw.json"
+        echo "[setup] Restored from $BAK"
+        RESTORED=true
+        break
+      fi
+    done
+    if [ "$RESTORED" = "false" ]; then
+      echo "[setup] No valid backup found — removing corrupted config"
+      rm -f "$OPENCLAW_DIR/openclaw.json"
+    fi
+  fi
+fi
+
 exec node /app/src/server.js
