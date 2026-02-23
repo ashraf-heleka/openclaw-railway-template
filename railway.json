@@ -8,8 +8,6 @@
     "numReplicas": 1,
     "sleepApplication": false,
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10,
-    "healthcheckPath": "/setup",
-    "healthcheckTimeout": 300
+    "restartPolicyMaxRetries": 10
   }
 }
