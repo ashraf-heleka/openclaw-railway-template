@@ -114,6 +114,15 @@ const ensureGatewayProxyConfig = (origin) => {
       }
     }
 
+    // Enable WhatsApp channel so the whatsapp_login agent tool is available
+    if (!cfg.channels) cfg.channels = {};
+    if (!cfg.channels.whatsapp) cfg.channels.whatsapp = {};
+    if (!cfg.channels.whatsapp.enabled) {
+      cfg.channels.whatsapp.enabled = true;
+      console.log("[wrapper] Enabled WhatsApp channel for QR login tool");
+      changed = true;
+    }
+
     if (changed) {
       fs.writeFileSync(configPath, JSON.stringify(cfg, null, 2));
     }
@@ -227,3 +236,4 @@ module.exports = {
   syncChannelConfig,
   getChannelStatus,
 };
+
