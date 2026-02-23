@@ -223,7 +223,13 @@ if [ -f "$OPENCLAW_CONFIG_PATH" ]; then
   node -e "
     const fs = require('fs');
     const configPath = process.env.OPENCLAW_CONFIG_PATH;
-    const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    let cfg;
+    try {
+      cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    } catch(e) {
+      console.log('Reconcile skipped: invalid JSON —', e.message);
+      process.exit(0);
+    }
     if (!cfg.channels) cfg.channels = {};
     if (!cfg.plugins) cfg.plugins = {};
     if (!cfg.plugins.entries) cfg.plugins.entries = {};
