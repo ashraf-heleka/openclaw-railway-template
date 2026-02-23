@@ -176,6 +176,27 @@ server.listen(PORT, "0.0.0.0", () => {
         console.error("[wrapper] Failed to sync auth-profiles.json:", e.message);
       }
     }
+    // Ensure WhatsApp channel is enabled in config so the plugin loads
+    try {
+      const cfgPath = path.join(constants.OPENCLAW_DIR, "openclaw.json");
+      if (fs.existsSync(cfgPath)) {
+        const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
+        if (!cfg.channels) cfg.channels = {};
+        if (!cfg.channels.whatsapp) cfg.channels.whatsapp = {};
+        if (!cfg.channels.whatsapp.accounts) cfg.channels.whatsapp.accounts = {};
+        if (!cfg.channels.whatsapp.accounts.default) {
+          cfg.channels.whatsapp.accounts.default = { enabled: true };
+          if (!cfg.channels.whatsapp.dmPolicy) {
+            cfg.channels.whatsapp.dmPolicy = "allowlist";
+            cfg.channels.whatsapp.allowFrom = ["+16282466225"];
+          }
+          fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
+          console.log("[wrapper] Added WhatsApp channel config to openclaw.json");
+        }
+      }
+    } catch (e) {
+      console.error("[wrapper] Failed to patch WhatsApp config:", e.message);
+    }
     startGateway();
   } else {
     console.log("[wrapper] Awaiting onboarding via Setup UI");
