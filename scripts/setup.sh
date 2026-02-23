@@ -12,9 +12,18 @@ export OPENCLAW_CONFIG_PATH="$OPENCLAW_DIR/openclaw.json"
 # ============================================================
 
 if [ -f /data/.env ]; then
-  set -a
-  source /data/.env
-  set +a
+  # Safely parse .env line by line (avoids crash on malformed content)
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "${line// }" ]] && continue
+    if [[ "$line" == *=* ]]; then
+      key="${line%%=*}"
+      value="${line#*=}"
+      if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        export "$key=$value" 2>/dev/null || true
+      fi
+    fi
+  done < /data/.env
   echo "✓ Loaded /data/.env"
 fi
 
