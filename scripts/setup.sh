@@ -149,6 +149,35 @@ else
 fi
 
 # ============================================================
+# 4b. Repair invalid config entries (cleanup from bad deploys)
+# ============================================================
+
+if [ -f "$OPENCLAW_CONFIG_PATH" ]; then
+  node -e "
+    const fs = require('fs');
+    const path = process.env.OPENCLAW_CONFIG_PATH;
+    try {
+      const cfg = JSON.parse(fs.readFileSync(path, 'utf8'));
+      let changed = false;
+      // Remove invalid channels.whatsapp.enabled (not a valid top-level key)
+      if (cfg.channels && cfg.channels.whatsapp) {
+        const wa = cfg.channels.whatsapp;
+        if (Object.keys(wa).length === 1 && wa.enabled !== undefined) {
+          delete cfg.channels.whatsapp;
+          changed = true;
+          console.log('✓ Removed invalid channels.whatsapp.enabled');
+        } else if (wa.enabled !== undefined) {
+          delete cfg.channels.whatsapp.enabled;
+          changed = true;
+          console.log('✓ Removed invalid channels.whatsapp.enabled key');
+        }
+      }
+      if (changed) fs.writeFileSync(path, JSON.stringify(cfg, null, 2));
+    } catch(e) { console.log('Config repair skipped:', e.message); }
+  "
+fi
+
+# ============================================================
 # 5. If already onboarded, reconcile channels on boot
 # ============================================================
 
